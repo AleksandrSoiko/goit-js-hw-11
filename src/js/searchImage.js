@@ -1,38 +1,96 @@
 import searchImageApi from './searchImageApi';
 import markup from './markupService';
-import SimpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
-import { Notify } from 'notiflix';
+import lightBoxAPI from './lightBox';
+import notifyMessage from './notifyMessage';
 
 const searchImage = new searchImageApi();
+const messageAPI = new notifyMessage();
+const lightBox = new lightBoxAPI();
+
+const options = {
+  root: null,
+  rootMargin: '400px',
+  threshold: 0,
+};
+
+let observer = new IntersectionObserver(onLoad, options);
+
 const refs = {
   input: document.querySelector('.js-input'),
   button: document.querySelector('.js-btn'),
   gallery: document.querySelector('.gallery'),
+  guard: document.querySelector('.js-observer'),
 };
 
+refs.button.addEventListener('click', event => {
+  event.preventDefault();
+  if (
+    searchImage.searchQuery === refs.input.value.trim() &&
+    refs.gallery.children.length !== 0
+  ) {
+    messageAPI.scrollDown();
+    return;
+  }
+  getImage();
+});
+
 async function getImage() {
-  const answer = await searchImage.fetchImage().then(response => {
-    return response;
-  });
-  const data = await answer.data.hits;
-  return data;
+  searchImage.searchQuery = refs.input.value.trim();
+  await searchImage
+    .fetchImage()
+    .then(response => {
+      console.log(response.data.totalHits);
+      if (response.data.hits.length === 0) {
+        messageAPI.noImage();
+        allReset();
+        return;
+      }
+      if (searchImage.searchQuery.trim() === '') {
+        messageAPI.emptyValue();
+      }
+      searchImage.lastPage = Math.round(response.data.totalHits / 40);
+      const result = response.data.hits;
+      const contentMarkup = markup(result);
+      refs.gallery.innerHTML = ' ';
+      refs.gallery.insertAdjacentHTML('beforeend', contentMarkup);
+      lightBox.create();
+      searchImage.incrementPage();
+      observer.observe(refs.guard);
+      messageAPI.firstResponse(response.data.totalHits);
+    })
+    .catch(error => console.log(error));
 }
 
-refs.button.addEventListener('click', async event => {
-  event.preventDefault();
-  searchImage.searchQuery = refs.input.value;
-  refs.gallery.innerHTML = ' ';
-  await getImage().then(async data => {
-    const result = await markup(data);
+function onLoad(entries, observer) {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      searchImage
+        .fetchImage()
+        .then(response => {
+          console.log(response);
+          const result = response.data.hits;
+          const contentMarkup = markup(result);
+          refs.gallery.insertAdjacentHTML('beforeend', contentMarkup);
+          lightBox.reCreate();
 
-    await refs.gallery.insertAdjacentHTML('beforeend', result);
+          if (searchImage.page === searchImage.lastPage) {
+            observer.unobserve(refs.guard);
+            allReset();
+            messageAPI.lastPage();
+            return;
+          }
 
-    const lightbox = await new SimpleLightbox('.gallery a', {
-      scrollZoom: false,
-      captionsData: 'alt',
-      captionDelay: 250,
-      captionPosition: 'bottom',
-    });
+          searchImage.incrementPage();
+        })
+        .catch(err => console.log(err));
+    }
   });
-});
+}
+
+function allReset() {
+  searchImage.resetLastPage();
+  searchImage.resetPage();
+  searchImage.resetSearchQuery();
+}
+
+// не 500 рисует а 520??????

@@ -22,10 +22,10 @@ export default class searchImageApi {
   resetPage() {
     this.page = 1;
   }
-  setLastPage(value) {
-    this.lastPage = value;
-  }
   resetLastPage() {
     this.lastPage = 1;
+  }
+  resetSearchQuery() {
+    this.searchQuery = '';
   }
 }
