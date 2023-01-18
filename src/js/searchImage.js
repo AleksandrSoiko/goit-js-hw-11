@@ -25,7 +25,8 @@ const refs = {
 refs.button.addEventListener('click', event => {
   event.preventDefault();
   if (
-    searchImage.searchQuery === refs.input.value.trim() &&
+    searchImage.searchQuery.toLowerCase() ===
+      refs.input.value.toLowerCase().trim() &&
     refs.gallery.children.length !== 0
   ) {
     messageAPI.scrollDown();
@@ -39,7 +40,6 @@ async function getImage() {
   await searchImage
     .fetchImage()
     .then(response => {
-      console.log(response.data.totalHits);
       if (response.data.hits.length === 0) {
         messageAPI.noImage();
         allReset();
@@ -67,11 +67,11 @@ function onLoad(entries, observer) {
       searchImage
         .fetchImage()
         .then(response => {
-          console.log(response);
           const result = response.data.hits;
           const contentMarkup = markup(result);
           refs.gallery.insertAdjacentHTML('beforeend', contentMarkup);
           lightBox.reCreate();
+          // lightScroll();
 
           if (searchImage.page === searchImage.lastPage) {
             observer.unobserve(refs.guard);
@@ -93,4 +93,21 @@ function allReset() {
   searchImage.resetSearchQuery();
 }
 
-// не 500 рисует а 520??????
+// Плавное прокручивание страницы не имеет смысла с использованием
+// бесконечного скролла так как к нам приходит ответ в процессе скролла
+// а не по клику на кнопку. и не имеет смысла прокручивать страницу
+// до новых зарендереных карточек.
+// в функционале я зазобрался ( первый метод возвращает отступы и размеры
+// обьекта второй прокручивает область просмотра на две высоты карточки)
+//
+
+// function lightScroll() {
+//   const { height: cardHeight } = document
+//     .querySelector('.gallery')
+//     .firstElementChild.getBoundingClientRect();
+
+//   window.scrollBy({
+//     top: cardHeight * 2,
+//     behavior: 'smooth',
+//   });
+// }

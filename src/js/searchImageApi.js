@@ -11,7 +11,9 @@ export default class searchImageApi {
 
   async fetchImage() {
     return await axios.get(
-      `https://${BASE_URL}/?key=${KEY}&q=${this.searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${this.page}&per_page=40`,
+      `https://${BASE_URL}/?key=${KEY}&q=${this.searchQuery.toLowerCase()}&image_type=photo&orientation=horizontal&safesearch=true&page=${
+        this.page
+      }&per_page=40`,
       { credentials: 'omit' }
     );
   }
