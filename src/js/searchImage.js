@@ -32,6 +32,7 @@ refs.button.addEventListener('click', event => {
     messageAPI.scrollDown();
     return;
   }
+  searchImage.resetPage();
   getImage();
 });
 
