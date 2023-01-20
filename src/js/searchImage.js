@@ -36,6 +36,7 @@ refs.button.addEventListener('click', event => {
   getImage();
 });
 
+//  new push
 async function getImage() {
   searchImage.searchQuery = refs.input.value.trim();
   await searchImage
